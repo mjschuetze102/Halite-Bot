@@ -1,5 +1,6 @@
 import hlt
 import logging
+import ship_functions as _ship
 from collections import OrderedDict
 
 # GAME START
@@ -9,15 +10,15 @@ game = hlt.Game("BlackQueen v001")
 logging.info("Releasing the Black Queen!")
 
 planned_planets = []
-turn_counter = -5
+#turn_counter = -5
 
 while True:
     # TURN START
     # Update the map for the new turn and get the latest version
     game_map = game.update_map()
-    turn_counter += 1
+    #turn_counter += 1
 
-    logging.info("Turn " + str(turn_counter))
+    #logging.info("Turn " + str(turn_counter))
 
     # Here we define the set of commands to be sent to the Halite engine at the end of the turn
     command_queue = []
@@ -49,13 +50,14 @@ while True:
                                if isinstance(entities_by_distance[distance][0], hlt.entity.Ship) and
                                entities_by_distance[distance][0] not in team_ships]
 
-        # If there is an empty planet nearby
+        # If there is an empty planet
         if len(closest_empty_planets) > 0:
             # Target the planet to move to
             target_planet = closest_empty_planets[0]
 
             # Get the list of closest allied planets to the target planet
             entities_by_distance = game_map.nearby_entities_by_distance(target_planet)
+            entities_by_distance = OrderedDict(sorted(entities_by_distance.items(), key=lambda t: t[0]))
             closest_team_planets = [entities_by_distance[distance][0] for distance in entities_by_distance
                                     if isinstance(entities_by_distance[distance][0], hlt.entity.Planet) and
                                     entities_by_distance[distance][0].is_owner(me)]
@@ -66,91 +68,50 @@ while True:
                 distance_to_target_from_ship = ship.calculate_distance_between(closest_empty_planets[0])
                 distance_to_target_from_planet = closest_team_planets[0].calculate_distance_between(closest_empty_planets[0])
 
-                logging.info("Ship should {}\nDistance from ship: {}\nDistance from planet: {}".format(
-                    "expand" if distance_to_target_from_ship < (distance_to_target_from_planet + 30) else "dock",
-                    distance_to_target_from_ship, distance_to_target_from_planet))
+                # logging.info("Ship should {}\nDistance from ship: {}\nDistance from planet: {}".format(
+                #     "expand" if distance_to_target_from_ship < (distance_to_target_from_planet + 30) else "dock",
+                #     distance_to_target_from_ship, distance_to_target_from_planet))
 
-                # If the ship is the closest entity I have to the planet
+                # If the ship is the closest entity I have to the target planet
                 # +30 to try and account for ships spawning on far side of planet
                 if distance_to_target_from_ship < (distance_to_target_from_planet + 30):
-                    logging.info("Ship {} is expanding".format(ship.id))
-                    # If the ship can dock at the planet do so
-                    # Else navigate to the planet
-                    if ship.can_dock(target_planet):
-                        command_queue.append(ship.dock(target_planet))
-                    else:
-                        # If the planet is already being navigated to ignore it
-                        # Else navigate to it
-                        if target_planet in planned_planets:
-                            continue
-                        else:
-                            navigate_command = ship.navigate(
-                                ship.closest_point_to(target_planet),
-                                game_map,
-                                speed = int(hlt.constants.MAX_SPEED),
-                                ignore_ships = False
-                            )
+                    # logging.info("Ship {} is expanding".format(ship.id))
 
-                            # If we can successfully navigate to the planet, do so
-                            if navigate_command:
-                                command_queue.append(navigate_command)
-                                planned_planets.append(target_planet)
+                    # Move the ship
+                    (command_queue, planned_planets, cont) = _ship.move(ship, target_planet, command_queue,
+                                                                        planned_planets, game_map)
+                    if cont is 1:
+                        continue
 
                 # Else if I have a closer planet to the target planet
                 # Try to dock at a planet to up production of ships
                 elif distance_to_target_from_ship > distance_to_target_from_planet:
-                    logging.info("Ship {} is docking".format(ship.id))
+                    # logging.info("Ship {} is docking".format(ship.id))
                     # Get the list of closest allied planets to the target planet
                     entities_by_distance = game_map.nearby_entities_by_distance(ship)
+                    entities_by_distance = OrderedDict(sorted(entities_by_distance.items(), key=lambda t: t[0]))
                     closest_team_planets = [entities_by_distance[distance][0] for distance in entities_by_distance
                                             if isinstance(entities_by_distance[distance][0], hlt.entity.Planet) and
                                             entities_by_distance[distance][0].is_owner(me) and
                                             not entities_by_distance[distance][0].is_full()]
 
-                    logging.info("Old ship target: " + str(target_planet))
-                    # Target the planet to move to
-                    target_planet = closest_team_planets[0]
-                    logging.info("New ship target: " + str(target_planet))
+                    # If there are planets settled by me
+                    if len(closest_team_planets) > 0:
+                        # logging.info("Old ship target: " + str(target_planet))
+                        # Target the planet to move to
+                        target_planet = closest_team_planets[0]
+                        # logging.info("New ship target: " + str(target_planet))
 
-                    # If the ship can dock at the planet do so
-                    # Else navigate to the planet
-                    if ship.can_dock(target_planet):
-                        command_queue.append(ship.dock(target_planet))
-                    else:
-                        navigate_command = ship.navigate(
-                            ship.closest_point_to(target_planet),
-                            game_map,
-                            speed=int(hlt.constants.MAX_SPEED),
-                            ignore_ships=False
-                        )
-
-                        # If we can successfully navigate to the planet, do so
-                        if navigate_command:
-                            command_queue.append(navigate_command)
+                        (command_queue, temp, cont) = _ship.move(ship, target_planet, command_queue, [], game_map)
+                        if cont is 1:
+                            continue
 
             # If I have not settled any planets yet
             else:
-                # If the ship can dock at the planet do so
-                # Else navigate to the planet
-                if ship.can_dock(target_planet):
-                    command_queue.append(ship.dock(target_planet))
-                else:
-                    # If the planet is already being navigated to ignore it
-                    # Else navigate to it
-                    if target_planet in planned_planets:
-                        continue
-                    else:
-                        navigate_command = ship.navigate(
-                            ship.closest_point_to(target_planet),
-                            game_map,
-                            speed=int(hlt.constants.MAX_SPEED),
-                            ignore_ships=False
-                        )
-
-                        # If we can successfully navigate to the planet, do so
-                        if navigate_command:
-                            command_queue.append(navigate_command)
-                            planned_planets.append(target_planet)
+                (command_queue, planned_planets, cont) = _ship.move(ship, target_planet, command_queue,
+                                                                    planned_planets, game_map)
+                if cont is 1:
+                    continue
 
         # If there is no empty planet, but there are enemy ships
         elif len(closest_enemy_ships) > 0:

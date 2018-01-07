@@ -50,5 +50,7 @@ Temporary Items
 run_game.*
 *.log
 MyBotv*.py
+BlackQueenv*.py
 hlt/__pycache__
 *.zip
+*.hlt

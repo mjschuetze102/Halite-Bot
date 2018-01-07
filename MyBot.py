@@ -108,6 +108,9 @@ while True:
 
             # If I have not settled any planets yet
             else:
+                # Target the planet to move to
+                target_planet = next(planet for planet in closest_empty_planets if planet not in planned_planets)
+
                 (command_queue, planned_planets, cont) = _ship.move(ship, target_planet, command_queue,
                                                                     planned_planets, game_map)
                 if cont is 1:
@@ -117,16 +120,57 @@ while True:
         elif len(closest_enemy_ships) > 0:
             target_ship = closest_enemy_ships[0]
 
-            navigate_command = ship.navigate(
-                ship.closest_point_to(target_ship),
-                game_map,
-                speed=int(hlt.constants.MAX_SPEED),
-                ignore_ships=False
-            )
+            # Get the list of closest allied planets to the ship
+            entities_by_distance = game_map.nearby_entities_by_distance(ship)
+            entities_by_distance = OrderedDict(sorted(entities_by_distance.items(), key=lambda t: t[0]))
+            closest_team_planets = [entities_by_distance[distance][0] for distance in entities_by_distance
+                                    if isinstance(entities_by_distance[distance][0], hlt.entity.Planet) and
+                                    entities_by_distance[distance][0].is_owner(me) and
+                                    not entities_by_distance[distance][0].is_full()]
 
-            # If we can successfully navigate to the enemy, do so
-            if navigate_command:
-                command_queue.append(navigate_command)
+            # If there are planets that have not been fully docked
+            if len(closest_team_planets) > 0:
+                #  Find the distance from the current ship to the target ship and to the closest planet
+                distance_to_target_ship = ship.calculate_distance_between(target_ship)
+                distance_to_target_planet = ship.calculate_distance_between(closest_team_planets[0])
+
+                # If the enemy ship is the closest entity to my ship
+                # Attack the ship
+                if distance_to_target_ship < distance_to_target_planet:
+                    navigate_command = ship.navigate(
+                        ship.closest_point_to(target_ship),
+                        game_map,
+                        speed=int(hlt.constants.MAX_SPEED),
+                        ignore_ships=False
+                    )
+
+                    # If we can successfully navigate to the enemy, do so
+                    if navigate_command:
+                        command_queue.append(navigate_command)
+
+                # Else if the ship is closer to the target planet
+                # Try to dock at a planet to up production of ships
+                elif distance_to_target_ship > distance_to_target_planet:
+                    # Target the planet to move to
+                    target_planet = closest_team_planets[0]
+
+                    (command_queue, temp, cont) = _ship.move(ship, target_planet, command_queue, [], game_map)
+                    if cont is 1:
+                        continue
+
+            # If all of my planets are fully docked
+            else:
+                # Attack the ship
+                navigate_command = ship.navigate(
+                    ship.closest_point_to(target_ship),
+                    game_map,
+                    speed=int(hlt.constants.MAX_SPEED),
+                    ignore_ships=False
+                )
+
+                # If we can successfully navigate to the enemy, do so
+                if navigate_command:
+                    command_queue.append(navigate_command)
 
     # Send end of turn command queue
     game.send_command_queue(command_queue)

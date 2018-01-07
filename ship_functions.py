@@ -18,7 +18,9 @@ def separate_ships(team_ships, command_queue):
         command_queue.append(thrust_command)
 
         # Tell the ship to SETTLE
+        logging.info("Original role: " + str(ship.role))
         ship.change_role_settle()
+        logging.info("Updated role: " + str(ship.role))
 
 def move(ship, target_planet, command_queue, game_map):
     # If the ship can dock at the planet do so

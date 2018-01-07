@@ -32,7 +32,7 @@ calculate_new_ship_role = {
 perform_ship_action = {
     hlt.entity.Ship.Role.SETTLE: lambda s, ce: control_ship.settle(s, planned_planets, game_map),
     hlt.entity.Ship.Role.DOCK: lambda s, ce: control_ship.move(s, ce, game_map),
-    hlt.entity.Ship.Role.ATTACK: lambda s, ce: control_ship.attack(s, ce, game_map),
+    hlt.entity.Ship.Role.ATTACK: lambda s, ce: control_ship.attack(s, game_map),
     hlt.entity.Ship.Role.DEFEND: lambda s, ce: control_ship.defend(s, ce, game_map),
 }
 
@@ -45,6 +45,11 @@ while True:
 
     # Here we define the set of commands to be sent to the Halite engine at the end of the turn
     command_queue = []
+
+    # Clear the list of planned planets to speed up process
+    # Each iteration uses a copy of the planet not the reference to it
+    # By clearing the list, we aren't actually changing functionality
+    planned_planets = []
 
     # Get my player object
     me = game_map.get_me()
@@ -74,6 +79,12 @@ while True:
         entities_by_distance = game_map.nearby_entities_by_distance(ship)
         entities_by_distance = OrderedDict(sorted(entities_by_distance.items(), key=lambda t: t[0]))
 
+        # Get the list of empty planets near the ship
+        closest_empty_planets = [entities_by_distance[distance][0] for distance in entities_by_distance \
+                                 if isinstance(entities_by_distance[distance][0], hlt.entity.Planet) and \
+                                 not entities_by_distance[distance][0].is_owned() and
+                                 not entities_by_distance[distance][0] in planned_planets]
+
         # Get all entities excluding my other ships
         entities_by_distance = [entities_by_distance[distance][0] for distance in entities_by_distance
                                 if isinstance(entities_by_distance[distance][0], hlt.entity.Planet) or
@@ -85,6 +96,9 @@ while True:
 
         # Calculate the new role for the ship
         calculate_new_ship_role[ship.role](ship, closest_entity)
+
+        if ship.role is ship.Role.SETTLE and not len(closest_empty_planets) > 0:
+            ship.change_role_dock()
 
         # Get the action the ship should perform
         action = perform_ship_action[ship.role](ship, closest_entity)

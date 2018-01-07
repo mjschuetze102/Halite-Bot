@@ -87,7 +87,7 @@ def settle(ship, planned_planets, game_map):
         return move(ship, closest_planet, game_map, planned_planets)
 
 
-def attack(ship, target_ship, game_map):
+def destroy(ship, target_ship, game_map):
     """
     Moves the ship towards the enemy ship
     :param ship: current ship being controlled
@@ -109,6 +109,31 @@ def attack(ship, target_ship, game_map):
         return navigate_command
 
 
+def attack(ship, game_map):
+    """
+    Moves the ship towards the enemy ship
+    :param ship: current ship being controlled
+    :param target_ship: destination for the ship
+    :param game_map: the map of the game
+    :return: action to be entered into command_queue
+    """
+    # Collect information about all entities near the ship
+    entities_by_distance = game_map.nearby_entities_by_distance(ship)
+    entities_by_distance = OrderedDict(sorted(entities_by_distance.items(), key=lambda t: t[0]))
+
+    # Get all entities excluding my ships and other planets
+    entities_by_distance = [entities_by_distance[distance][0] for distance in entities_by_distance
+                            if isinstance(entities_by_distance[distance][0], hlt.entity.Ship) and
+                            entities_by_distance[distance][0] not in game_map.get_me().all_ships()]
+
+    # Find the closest enemy
+    closest_enemy = entities_by_distance[0]
+
+    if closest_enemy is not None:
+        # Destroy the enemy
+        return destroy(ship, closest_enemy, game_map)
+
+
 def defend(ship, target, game_map):
     """
     Moves the ship towards the target
@@ -119,7 +144,7 @@ def defend(ship, target, game_map):
     """
     # If the target is an enemy ship, attack it
     if isinstance(target, hlt.entity.Ship):
-        return attack(ship, target, game_map)
+        return destroy(ship, target, game_map)
 
     # If the target is a planet
     elif isinstance(target, hlt.entity.Planet):
@@ -141,8 +166,8 @@ def defend(ship, target, game_map):
             if target.calculate_distance_between(entities_by_distance[0]) < (target.radius * 2) else None
 
         if closest_enemy is not None:
-            # Attack the enemy
-            return attack(ship, closest_enemy, game_map)
+            # Destroy the enemy
+            return destroy(ship, closest_enemy, game_map)
 
     # If the target is not an enemy ship or planet
     else:

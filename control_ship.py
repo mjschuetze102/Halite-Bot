@@ -23,16 +23,22 @@ def scatter_ships(team_ships, command_queue):
         # Tell the ship to SETTLE
         ship.change_role_settle()
 
-def move(ship, target_planet, game_map):
+
+def move(ship, target_planet, game_map, planned_planets = None):
     """
     Moves the ship towards target_planet
     :param ship: current ship being controlled
     :param target_planet: destination for the ship
     :param game_map: the map of the game
+    :param planned_planets: list of empty planets being traveled to
     :return: action to be entered into command_queue
     """
     # If the ship can dock at the planet do so
     if ship.can_dock(target_planet):
+        # # Remove the planet from planned planets
+        # if planned_planets is not None:
+        #     planned_planets.remove(target_planet)
+        #     logging.info("Planet {} was removed from planned planets".format(target_planet.id))
         return ship.dock(target_planet)
     # Navigate to the planet
     else:
@@ -46,7 +52,39 @@ def move(ship, target_planet, game_map):
 
         # If we can successfully navigate to the planet, do so
         if navigate_command:
+            # Add the planet to planned planets
+            if planned_planets is not None:
+                planned_planets.append(target_planet)
+            #     if target_planet not in planned_planets:
+            #         planned_planets.append(target_planet)
+            #         logging.info("Planet {} was added to planned planets".format(target_planet.id))
             return navigate_command
+
+
+def settle(ship, planned_planets, game_map):
+    """
+    Moves the ship towards the empty planet
+    :param ship: current ship being controlled
+    :param planned_planets: list of empty planets being traveled to
+    :param game_map: the map of the game
+    :return: action to be entered into command_queue
+    """
+    # Collect information about all entities near the ship
+    entities_by_distance = game_map.nearby_entities_by_distance(ship)
+    entities_by_distance = OrderedDict(sorted(entities_by_distance.items(), key=lambda t: t[0]))
+
+    # Get all unowned planets
+    entities_by_distance = [entities_by_distance[distance][0] for distance in entities_by_distance
+                            if isinstance(entities_by_distance[distance][0], hlt.entity.Planet) and
+                            not entities_by_distance[distance][0].is_owned() and
+                            not entities_by_distance[distance][0] in planned_planets]
+
+    # Find the closest unowned planet
+    closest_planet = entities_by_distance[0]
+
+    # Tell the ship to move to the planet
+    if closest_planet is not None:
+        return move(ship, closest_planet, game_map, planned_planets)
 
 
 def attack(ship, target_ship, game_map):

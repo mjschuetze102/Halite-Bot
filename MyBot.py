@@ -30,7 +30,7 @@ calculate_new_ship_role = {
 }
 
 perform_ship_action = {
-    hlt.entity.Ship.Role.SETTLE: lambda s, ce: control_ship.move(s, ce, game_map),
+    hlt.entity.Ship.Role.SETTLE: lambda s, ce: control_ship.settle(s, planned_planets, game_map),
     hlt.entity.Ship.Role.DOCK: lambda s, ce: control_ship.move(s, ce, game_map),
     hlt.entity.Ship.Role.ATTACK: lambda s, ce: control_ship.attack(s, ce, game_map),
     hlt.entity.Ship.Role.DEFEND: lambda s, ce: control_ship.defend(s, ce, game_map),
@@ -60,9 +60,6 @@ while True:
         # Send end of turn command queue
         game.send_command_queue(command_queue)
         start_of_game = False
-
-        for ship in team_ships:
-            logging.info("Ship ID: {} Ship Role: {}".format(ship.id, ship.role))
         continue
 
     # For every ship that I control

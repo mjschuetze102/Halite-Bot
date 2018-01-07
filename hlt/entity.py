@@ -235,10 +235,11 @@ class Ship(Entity):
 
     # Added in to check what the actions of the bot should be
     class Role(Enum):
-        SETTLE = 0
-        DOCK = 1
-        ATTACK = 2
-        DEFEND = 3
+        NONE = 0
+        SETTLE = 1
+        DOCK = 2
+        ATTACK = 3
+        DEFEND = 4
 
     def __init__(self, player_id, ship_id, x, y, hp, vel_x, vel_y,
                  docking_status, planet, progress, cooldown):

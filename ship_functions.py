@@ -16,6 +16,7 @@ def move(ship, target_planet, command_queue, planned_planets, game_map):
                 ship.closest_point_to(target_planet),
                 game_map,
                 speed=int(hlt.constants.MAX_SPEED),
+                angular_step=5,
                 ignore_ships=False
             )
 

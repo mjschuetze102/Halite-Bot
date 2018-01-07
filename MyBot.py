@@ -5,7 +5,7 @@ from collections import OrderedDict
 
 # GAME START
 # Here we define the bot's name as Settler and initialize the game, including communication with the Halite engine.
-game = hlt.Game("BlackQueen v002")
+game = hlt.Game("BlackQueen v003")
 # Then we print our start message to the logs
 logging.info("Releasing the Black Queen!")
 
@@ -165,6 +165,7 @@ while True:
                         ship.closest_point_to(target_ship),
                         game_map,
                         speed=int(hlt.constants.MAX_SPEED),
+                        angular_step=5,
                         ignore_ships=False
                     )
 
@@ -189,6 +190,7 @@ while True:
                     ship.closest_point_to(target_ship),
                     game_map,
                     speed=int(hlt.constants.MAX_SPEED),
+                    angular_step=5,
                     ignore_ships=False
                 )
 

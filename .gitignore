@@ -47,3 +47,6 @@ Temporary Items
 .apdisk
 
 .idea
+run_game.*
+*.log
+MyBotv*.py

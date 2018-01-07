@@ -1,8 +1,63 @@
 import hlt
 import logging
 
-#
-# TODO: change from 4 functions to 1 with each if statement having a dict for state transition
+# TODO: change from multiple functions to 1 with each if statement having a dict for state transition
+
+
+def none_transition(ship, closest_entity, me):
+    """
+    Compute logic for ships set to settle
+    :param ship: entity to control
+    :param closest_entity: object that is closest to current ship
+    :param me: my player object
+    """
+    # Determine if closest entity is a planet
+    if isinstance(closest_entity, hlt.entity.Planet):
+        # Determine if planet is unowned
+        if not closest_entity.is_owned():
+            """
+            If closest planet is unowned,
+            then we can settle
+            """
+            ship.change_role_settle()
+
+        # If the planet is owned, but not by me
+        elif not closest_entity.is_owner(me):
+            """
+            If closest planet is not unowned,
+            then someone else has settled it and we attack
+            """
+            ship.change_role_attack()
+
+        # If the planet is owned by me
+        else:
+            # If the planet still has space to mine
+            if not closest_entity.is_full():
+                """
+                If closest planet is owned by me and not full,
+                then dock to create more ships
+                """
+                ship.change_role_dock()
+
+            # If the planet does not have space to mine
+            else:
+                """
+                If closest planet is owned by me and full,
+                then defend the planet
+                """
+                ship.change_role_defend()
+
+    # Determine if closest entity is a ship
+    elif isinstance(closest_entity, hlt.entity.Ship):
+        """
+        If closest entity is a ship,
+        then defend so we can settle later
+        """
+        ship.change_role_defend()
+
+    else:
+        logging.info("Unknown type: " + str(closest_entity))
+
 
 def settle_transition(ship, closest_entity, me):
     """

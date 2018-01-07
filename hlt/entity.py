@@ -126,6 +126,7 @@ class Planet(Entity):
         """
         return list(self._docked_ships.values())
 
+    # Added in to check ownership of planets
     def is_owned(self):
         """
         Determines if the planet has an owner.
@@ -133,6 +134,15 @@ class Planet(Entity):
         :rtype: bool
         """
         return self.owner is not None
+
+    def is_owner(self, player):
+        """
+        Determines if the planet is owned by given player
+        :param player: The player to check ownership of the planet to
+        :return: True if player owns planet, False otherwise
+        :rtype: bool
+        """
+        return self.owner is player
 
     def is_full(self):
         """

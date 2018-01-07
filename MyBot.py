@@ -4,9 +4,9 @@ from collections import OrderedDict
 
 # GAME START
 # Here we define the bot's name as Settler and initialize the game, including communication with the Halite engine.
-game = hlt.Game("VIRUSv001")
+game = hlt.Game("Settlerv003")
 # Then we print our start message to the logs
-logging.info("Starting my VirusDroid!")
+logging.info("Starting my Settler bot!")
 
 planned_planets = []
 
@@ -55,17 +55,22 @@ while True:
             if ship.can_dock(target_planet):
                 command_queue.append(ship.dock(target_planet))
             else:
-                navigate_command = ship.navigate(
-                    ship.closest_point_to(target_planet),
-                    game_map,
-                    speed = int(hlt.constants.MAX_SPEED),
-                    ignore_ships = False
-                )
+                # If the planet is already being navigated to ignore it
+                # Else navigate to it
+                if target_planet in planned_planets:
+                    continue
+                else:
+                    navigate_command = ship.navigate(
+                        ship.closest_point_to(target_planet),
+                        game_map,
+                        speed = int(hlt.constants.MAX_SPEED),
+                        ignore_ships = False
+                    )
 
-                # If we can successfully navigate to the planet, do so
-                if navigate_command:
-                    command_queue.append(navigate_command)
-                    planned_planets.append(target_planet)
+                    # If we can successfully navigate to the planet, do so
+                    if navigate_command:
+                        command_queue.append(navigate_command)
+                        planned_planets.append(target_planet)
 
         # If there is no empty planet, but there are enemy ships
         elif len(closest_enemy_ships) > 0:

@@ -5,11 +5,12 @@ from collections import OrderedDict
 
 # GAME START
 # Here we define the bot's name as Settler and initialize the game, including communication with the Halite engine.
-game = hlt.Game("BlackQueen v001")
+game = hlt.Game("BlackQueen v002")
 # Then we print our start message to the logs
 logging.info("Releasing the Black Queen!")
 
 planned_planets = []
+start_of_game = True
 #turn_counter = -5
 
 while True:
@@ -29,8 +30,31 @@ while True:
     # Get all the ships that I own
     team_ships = game_map.get_me().all_ships()
 
+    # Move ships away from each other at the start
+    if start_of_game:
+        # For every ship that I control
+        for ship in team_ships:
+            # Collect the position of the other ships
+            ally_ship_position = []
+            for ally in team_ships:
+                if ally is not ship:
+                    ally_ship_position.append(ship.calculate_angle_between(ally))
+
+            # Find the middle of the two other ships
+            thrust_direction = int(180 + (sum(ally_ship_position) / len(ally_ship_position)))
+
+            # Move the ship away from the others
+            thrust_command = ship.thrust(hlt.constants.MAX_SPEED, thrust_direction)
+            command_queue.append(thrust_command)
+
+        # Send end of turn command queue
+        game.send_command_queue(command_queue)
+        start_of_game = False
+        continue
+
     # For every ship that I control
     for ship in team_ships:
+
         # If the ship is docked
         if ship.docking_status != ship.DockingStatus.UNDOCKED:
             # Skip this ship

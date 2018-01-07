@@ -2,7 +2,6 @@ from collections import OrderedDict
 
 import hlt
 import logging
-import ship_functions
 import ship_role_calculation as ship_role
 import control_ship
 
@@ -56,7 +55,7 @@ while True:
     # Move ships away from each other at the start
     if start_of_game:
         # Spread the ships apart at the start
-        ship_functions.separate_ships(team_ships, command_queue)
+        control_ship.scatter_ships(team_ships, command_queue)
 
         # Send end of turn command queue
         game.send_command_queue(command_queue)

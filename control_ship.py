@@ -3,6 +3,26 @@ from collections import OrderedDict
 import hlt
 import logging
 
+
+def scatter_ships(team_ships, command_queue):
+    # For every ship that I control
+    for ship in team_ships:
+        # Collect the position of the other ships
+        ally_ship_position = []
+        for ally in team_ships:
+            if ally is not ship:
+                ally_ship_position.append(ship.calculate_angle_between(ally))
+
+        # Find the middle of the two other ships
+        thrust_direction = int(180 + (sum(ally_ship_position) / len(ally_ship_position)))
+
+        # Move the ship away from the others
+        thrust_command = ship.thrust(hlt.constants.MAX_SPEED, thrust_direction)
+        command_queue.append(thrust_command)
+
+        # Tell the ship to SETTLE
+        ship.change_role_settle()
+
 def move(ship, target_planet, game_map):
     """
     Moves the ship towards target_planet

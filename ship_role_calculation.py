@@ -1,6 +1,8 @@
 import hlt
 import logging
 
+#
+# TODO: change from 4 functions to 1 with each if statement having a dict for state transition
 
 def settle_transition(ship, closest_entity, me):
     """

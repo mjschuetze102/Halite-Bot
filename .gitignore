@@ -51,3 +51,4 @@ run_game.*
 *.log
 MyBotv*.py
 hlt/__pycache__
+*.zip

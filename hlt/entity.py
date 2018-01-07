@@ -249,7 +249,7 @@ class Ship(Entity):
         self.radius = constants.SHIP_RADIUS
         self.health = hp
         self.docking_status = docking_status
-        self.role = Ship.Role.SETTLE
+        self.role = Ship.Role.NONE
         self.planet = planet if (docking_status is not Ship.DockingStatus.UNDOCKED) else None
         self._docking_progress = progress
         self._weapon_cooldown = cooldown

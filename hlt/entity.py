@@ -126,7 +126,6 @@ class Planet(Entity):
         """
         return list(self._docked_ships.values())
 
-    # Added in to check ownership of planets
     def is_owned(self):
         """
         Determines if the planet has an owner.
@@ -135,6 +134,7 @@ class Planet(Entity):
         """
         return self.owner is not None
 
+    # Added in to check ownership of planets
     def is_owner(self, player):
         """
         Determines if the planet is owned by given player
@@ -233,6 +233,13 @@ class Ship(Entity):
         DOCKED = 2
         UNDOCKING = 3
 
+    # Added in to check what the actions of the bot should be
+    class Role(Enum):
+        SETTLE = 0
+        DOCK = 1
+        ATTACK = 2
+        DEFEND = 3
+
     def __init__(self, player_id, ship_id, x, y, hp, vel_x, vel_y,
                  docking_status, planet, progress, cooldown):
         self.id = ship_id
@@ -242,6 +249,7 @@ class Ship(Entity):
         self.radius = constants.SHIP_RADIUS
         self.health = hp
         self.docking_status = docking_status
+        self.role = Ship.Role.SETTLE
         self.planet = planet if (docking_status is not Ship.DockingStatus.UNDOCKED) else None
         self._docking_progress = progress
         self._weapon_cooldown = cooldown
@@ -278,6 +286,30 @@ class Ship(Entity):
         :rtype: str
         """
         return "u {}".format(self.id)
+
+    def change_role_settle(self):
+        """
+        Change the role of the ship to settle
+        """
+        self.role = Ship.Role.SETTLE
+
+    def change_role_dock(self):
+        """
+        Change the role of the ship to dock
+        """
+        self.role = Ship.Role.DOCK
+
+    def change_role_attack(self):
+        """
+        Change the role of the ship to attack
+        """
+        self.role = Ship.Role.ATTACK
+
+    def change_role_defend(self):
+        """
+        Change the role of the ship to defend
+        """
+        self.role = Ship.Role.DEFEND
 
     def navigate(self, target, game_map, speed, avoid_obstacles=True, max_corrections=90, angular_step=1,
                  ignore_ships=False, ignore_planets=False):

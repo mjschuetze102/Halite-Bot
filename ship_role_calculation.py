@@ -43,9 +43,9 @@ def none_transition(ship, closest_entity, me):
             else:
                 """
                 If closest planet is owned by me and full,
-                then defend the planet
+                then settle another planet
                 """
-                ship.change_role_attack()
+                ship.change_role_settle()
 
     # Determine if closest entity is a ship
     elif isinstance(closest_entity, hlt.entity.Ship):

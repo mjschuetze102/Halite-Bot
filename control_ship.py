@@ -24,7 +24,7 @@ def scatter_ships(team_ships, command_queue):
         ship.change_role_settle()
 
 
-def move(ship, target_planet, game_map, planned_planets = None):
+def move(ship, target_planet, game_map, planned_planets=None):
     """
     Moves the ship towards target_planet
     :param ship: current ship being controlled
@@ -35,10 +35,7 @@ def move(ship, target_planet, game_map, planned_planets = None):
     """
     # If the ship can dock at the planet do so
     if ship.can_dock(target_planet):
-        # # Remove the planet from planned planets
-        # if planned_planets is not None:
-        #     planned_planets.remove(target_planet)
-        #     logging.info("Planet {} was removed from planned planets".format(target_planet.id))
+        ship.change_role_self_defense()
         return ship.dock(target_planet)
     # Navigate to the planet
     else:
@@ -172,3 +169,44 @@ def defend(ship, target, game_map):
     # If the target is not an enemy ship or planet
     else:
         logging.info("Unknown type: " + str(target))
+
+
+def self_defense(ship, target, game_map):
+    """
+    Controls how a docked bot will react when an enemy bot comes near
+    :param ship: current ship being controlled
+    :param target: destination for the ship
+    :param game_map: the map of the game
+    :return: action to be entered into command_queue
+    """
+    """
+    Find the enemy closest to the planet
+    If the enemy gets within a certain range, undock and defend the planet
+    """
+    # Collect information about all entities near the ship
+    entities_by_distance = game_map.nearby_entities_by_distance(ship)
+    entities_by_distance = OrderedDict(sorted(entities_by_distance.items(), key=lambda t: t[0]))
+
+    # Get all entities excluding my ships and other planets
+    entities_by_distance = [entities_by_distance[distance][0] for distance in entities_by_distance
+                            if isinstance(entities_by_distance[distance][0], hlt.entity.Ship) and
+                            entities_by_distance[distance][0] not in game_map.get_me().all_ships()]
+
+    # Find the closest enemy to the planet
+    closest_enemy = entities_by_distance[0] \
+        if target.calculate_distance_between(entities_by_distance[0]) < (target.radius * 1.5) else None
+
+    # If the ship is docked
+    if ship.docking_status is not ship.docking_status.UNDOCKED:
+        # Tell the ship to undock if there is an enemy nearby
+        if closest_enemy is not None:
+            return ship.undock()
+
+    # If the ship is not docked
+    if ship.docking_status is ship.docking_status.UNDOCKED:
+        # Tell the ship to defend if there is an enemy nearby
+        if closest_enemy is not None:
+            return destroy(ship, target, game_map)
+        # Tell the ship to dock again if the enemy left
+        else:
+            return move(ship, target, game_map)

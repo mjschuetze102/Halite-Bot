@@ -240,6 +240,7 @@ class Ship(Entity):
         DOCK = 2
         ATTACK = 3
         DEFEND = 4
+        SELF_DEFENSE = 5
 
     def __init__(self, player_id, ship_id, x, y, hp, vel_x, vel_y,
                  docking_status, planet, progress, cooldown):
@@ -311,6 +312,12 @@ class Ship(Entity):
         Change the role of the ship to defend
         """
         self.role = Ship.Role.DEFEND
+
+    def change_role_self_defense(self):
+        """
+        Change the role of the ship to self defense mode
+        """
+        self.role = Ship.Role.SELF_DEFENSE
 
     def navigate(self, target, game_map, speed, avoid_obstacles=True, max_corrections=90, angular_step=1,
                  ignore_ships=False, ignore_planets=False):

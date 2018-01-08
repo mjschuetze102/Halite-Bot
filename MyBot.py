@@ -7,11 +7,12 @@ import control_ship
 
 # GAME START
 # Here we define the bot's name and initialize the game, including communication with the Halite engine.
-game = hlt.Game("BlackQueen v004")
+game = hlt.Game("BlackQueen v005")
 # Then we print our start message to the logs
 logging.info("Releasing the Black Queen!")
 
 planned_planets = []
+protected_planets = []
 start_of_game = True
 
 me = None
@@ -27,6 +28,7 @@ calculate_new_ship_role = {
     hlt.entity.Ship.Role.DOCK: lambda s, ce: ship_role.dock_transition(s, ce, me),
     hlt.entity.Ship.Role.ATTACK: lambda s, ce: ship_role.attack_transition(s, ce, me),
     hlt.entity.Ship.Role.DEFEND: lambda s, ce: ship_role.defend_transition(s, ce, me),
+    hlt.entity.Ship.Role.SELF_DEFENSE: lambda s, ce: None,
 }
 
 perform_ship_action = {
@@ -34,6 +36,7 @@ perform_ship_action = {
     hlt.entity.Ship.Role.DOCK: lambda s, ce: control_ship.move(s, ce, game_map),
     hlt.entity.Ship.Role.ATTACK: lambda s, ce: control_ship.attack(s, game_map),
     hlt.entity.Ship.Role.DEFEND: lambda s, ce: control_ship.defend(s, ce, game_map),
+    hlt.entity.Ship.Role.SELF_DEFENSE: lambda s, ce: control_ship.self_defense(s, ce, game_map),
 }
 
 #####################################################

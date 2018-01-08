@@ -35,7 +35,6 @@ def move(ship, target_planet, game_map, planned_planets=None):
     """
     # If the ship can dock at the planet do so
     if ship.can_dock(target_planet):
-        ship.change_role_self_defense()
         return ship.dock(target_planet)
     # Navigate to the planet
     else:
@@ -81,7 +80,17 @@ def settle(ship, planned_planets, game_map):
 
     # Tell the ship to move to the planet
     if closest_planet is not None:
-        return move(ship, closest_planet, game_map, planned_planets)
+        # Get the move action of the ship
+        move_action = move(ship, closest_planet, game_map, planned_planets)
+
+        # If the move action is to dock
+        if move_action is ship.dock(closest_planet):
+            """
+            If the ship is docking, it means it is the first ship on the planet
+            This means we should set the self defense state for the ship
+            """
+            ship.change_role_self_defense()
+        return move_action
 
 
 def destroy(ship, target_ship, game_map):

@@ -37,7 +37,7 @@ def none_transition(ship, closest_entity, me):
                 If closest planet is owned by me and not full,
                 then dock to create more ships
                 """
-                ship.change_role_dock()
+                ship.change_role_settle()
 
             # If the planet does not have space to mine
             else:
@@ -157,9 +157,9 @@ def dock_transition(ship, closest_entity, me):
             else:
                 """
                 If closest planet is now owned by me and full,
-                then defend the planet
+                then attack the enemy
                 """
-                ship.change_role_defend()
+                ship.change_role_attack()
 
     # Determine if closest entity is a ship
     elif isinstance(closest_entity, hlt.entity.Ship):
@@ -205,10 +205,9 @@ def attack_transition(ship, closest_entity, me):
                 if not closest_entity.is_full():
                     """
                     If closest planet is now owned by me and not full,
-                    then continue attacking
+                    then continue dock at the planet
                     """
-                    # No need to change state
-                    return
+                    ship.change_role_dock()
 
                 # If the planet does not have space to mine
                 else:

@@ -12,7 +12,6 @@ game = hlt.Game("BlackQueen v005")
 logging.info("Releasing the Black Queen!")
 
 planned_planets = []
-protected_planets = []
 start_of_game = True
 
 me = None
@@ -22,13 +21,15 @@ game_map = None
 #      Define rules for figuring out ship role      #
 #####################################################
 
+my_fleet_roles = {}
+
 calculate_new_ship_role = {
     hlt.entity.Ship.Role.NONE: lambda s, ce: ship_role.none_transition(s, ce, me),
     hlt.entity.Ship.Role.SETTLE: lambda s, ce: ship_role.settle_transition(s, ce, me),
     hlt.entity.Ship.Role.DOCK: lambda s, ce: ship_role.dock_transition(s, ce, me),
     hlt.entity.Ship.Role.ATTACK: lambda s, ce: ship_role.attack_transition(s, ce, me),
     hlt.entity.Ship.Role.DEFEND: lambda s, ce: ship_role.defend_transition(s, ce, me),
-    hlt.entity.Ship.Role.SELF_DEFENSE: lambda s, ce: None,
+    hlt.entity.Ship.Role.SELF_DEFENSE: lambda s, ce: hlt.entity.Ship.Role.SELF_DEFENSE,
 }
 
 perform_ship_action = {
@@ -40,6 +41,17 @@ perform_ship_action = {
 }
 
 #####################################################
+
+# my_bots = {}
+
+#########################################################
+# Check to see what role  the bots are getting stuck at #
+#########################################################
+# if ship.id in my_bots and my_bots[ship.id] is ship.role:
+#     logging.info("Ship {} has kept {}".format(ship.id, ship.role))
+#
+# my_bots[ship.id] = ship.role
+#########################################################
 
 while True:
     # TURN START
@@ -72,6 +84,11 @@ while True:
 
     # For every ship that I control
     for ship in team_ships:
+        # Find the role of the current ship
+        if ship.id in my_fleet_roles:
+            ship.role = my_fleet_roles[ship.id]
+
+        logging.info("Ship {} starting with {}".format(ship.id, ship.role))
 
         # If the ship is docked
         if ship.docking_status is not ship.DockingStatus.UNDOCKED:
@@ -103,6 +120,8 @@ while True:
         if ship.role is ship.Role.SETTLE and not len(closest_empty_planets) > 0:
             ship.change_role_dock()
 
+        logging.info("Ship {} has {}".format(ship.id, ship.role))
+
         # Get the action the ship should perform
         action = perform_ship_action[ship.role](ship, closest_entity)
 
@@ -112,6 +131,11 @@ while True:
             command_queue.append(action)
         else:
             logging.info("No action was performed on Ship {} with Role {}".format(ship.id, ship.role))
+
+        # Update the role of the current ship
+        my_fleet_roles[ship.id] = ship.role
+
+        logging.info("Ship {} ending with {}".format(ship.id, ship.role))
 
     # Send end of turn command queue
     game.send_command_queue(command_queue)

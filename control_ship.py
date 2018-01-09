@@ -20,7 +20,6 @@ def scatter_ships(team_ships, command_queue):
         thrust_command = ship.thrust(hlt.constants.MAX_SPEED, thrust_direction)
         command_queue.append(thrust_command)
 
-        # Tell the ship to SETTLE
         ship.change_role_settle()
 
 
@@ -51,9 +50,6 @@ def move(ship, target_planet, game_map, planned_planets=None):
             # Add the planet to planned planets
             if planned_planets is not None:
                 planned_planets.append(target_planet)
-            #     if target_planet not in planned_planets:
-            #         planned_planets.append(target_planet)
-            #         logging.info("Planet {} was added to planned planets".format(target_planet.id))
             return navigate_command
 
 
@@ -83,13 +79,6 @@ def settle(ship, planned_planets, game_map):
         # Get the move action of the ship
         move_action = move(ship, closest_planet, game_map, planned_planets)
 
-        # If the move action is to dock
-        if move_action is ship.dock(closest_planet):
-            """
-            If the ship is docking, it means it is the first ship on the planet
-            This means we should set the self defense state for the ship
-            """
-            ship.change_role_self_defense()
         return move_action
 
 
@@ -180,17 +169,74 @@ def defend(ship, target, game_map):
         logging.info("Unknown type: " + str(target))
 
 
-def self_defense(ship, target, game_map):
+def retreat(ship, target, game_map):
     """
-    Controls how a docked bot will react when an enemy bot comes near
+    Move the ship away from the target
+    :param ship: current ship being controlled
+    :param target: enemy closest to the ship
+    :param game_map: the map of the game
+    :return: action to be entered into command_queue
+    """
+    # Set the speed the ship will travel at
+    speed = hlt.constants.MAX_SPEED
+
+    # Collect information about all entities near the ship
+    entities_by_distance = game_map.nearby_entities_by_distance(target)
+    entities_by_distance = OrderedDict(sorted(entities_by_distance.items(), key=lambda t: t[0]))
+
+    # Get all my planets
+    entities_by_distance = [entities_by_distance[distance][0] for distance in entities_by_distance
+                            if isinstance(entities_by_distance[distance][0], hlt.entity.Planet) and
+                            not entities_by_distance[distance][0].is_owned() and
+                            not entities_by_distance[distance][0].is_owner(game_map.get_me())]
+
+    # Calculate the angle between the ship and closest team planet
+    angle_to_planet = ship.calculate_angle_between(entities_by_distance[0])
+
+    # Calculate the angle between the ship and target
+    angle_to_target = ship.calculate_angle_between(target)
+
+    # Calculate the angle to run away at
+    angle = ((angle_to_planet + angle_to_target) / 2) + 180
+
+    return ship.thrust(speed, angle)
+
+
+def investigate(ship, target):
+    """
+    Move the ship just outside the range of the target
+    :param ship: current ship being controlled
+    :param target: destination for the ship
+    :param game_map: the map of the game
+    :return: action to be entered into command_queue
+    """
+    # Set the speed the ship will travel at
+    speed = hlt.constants.MAX_SPEED
+
+    # Calculate the distance between the ship and target's range
+    distance = ship.calculate_distance_between(target) - (hlt.constants.SHIP_RADIUS + hlt.constants.WEAPON_RADIUS)
+
+    # Calculate the angle between the ship and target
+    angle = ship.calculate_angle_between(target)
+
+    # Figure out how how fast the ship needs to travel to the target
+    speed = speed if (distance >= speed) else distance
+
+    return ship.thrust(speed, angle)
+
+
+def distract(ship, target, game_map):
+    """
+    Controls ships designed to distract the enemy
     :param ship: current ship being controlled
     :param target: destination for the ship
     :param game_map: the map of the game
     :return: action to be entered into command_queue
     """
     """
-    Find the enemy closest to the planet
-    If the enemy gets within a certain range, undock and defend the planet
+    Find the enemy closest to the ship
+    If the enemy gets within a certain range, go towards it,
+        distract it, and lead it away from my base
     """
     # Collect information about all entities near the ship
     entities_by_distance = game_map.nearby_entities_by_distance(ship)
@@ -201,21 +247,20 @@ def self_defense(ship, target, game_map):
                             if isinstance(entities_by_distance[distance][0], hlt.entity.Ship) and
                             entities_by_distance[distance][0] not in game_map.get_me().all_ships()]
 
-    # Find the closest enemy to the planet
-    closest_enemy = entities_by_distance[0] \
-        if target.calculate_distance_between(entities_by_distance[0]) < (target.radius * 1.5) else None
+    # Calculate the distance between the ship and the enemy
+    distance_to_enemy = ship.calculate_distance_between(entities_by_distance[0])
 
-    # If the ship is docked
-    if ship.docking_status is not ship.docking_status.UNDOCKED:
-        # Tell the ship to undock if there is an enemy nearby
-        if closest_enemy is not None:
-            return ship.undock()
+    # Find the closest enemy to the ship
+    closest_enemy = entities_by_distance[0] if distance_to_enemy < 75 else None
 
-    # If the ship is not docked
-    if ship.docking_status is ship.docking_status.UNDOCKED:
-        # Tell the ship to defend if there is an enemy nearby
-        if closest_enemy is not None:
-            return destroy(ship, target, game_map)
-        # Tell the ship to dock again if the enemy left
+    # Decide what to do if there is an enemy nearby
+    if closest_enemy is not None:
+        # If the enemy is very far away, attack
+        if distance_to_enemy > 3 * (hlt.constants.SHIP_RADIUS + hlt.constants.WEAPON_RADIUS):
+            return attack(ship, game_map)
+        # If the enemy is far away, investigate
+        elif distance_to_enemy > hlt.constants.SHIP_RADIUS + hlt.constants.WEAPON_RADIUS:
+            return investigate(ship, target)
+        # If the enemy is close, run away
         else:
-            return move(ship, target, game_map)
+            return retreat(ship, target, game_map)

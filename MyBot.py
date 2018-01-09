@@ -7,7 +7,7 @@ import control_ship
 
 # GAME START
 # Here we define the bot's name and initialize the game, including communication with the Halite engine.
-game = hlt.Game("BlackQueen v005")
+game = hlt.Game("BlackQueen v006")
 # Then we print our start message to the logs
 logging.info("Releasing the Black Queen!")
 
@@ -29,7 +29,7 @@ calculate_new_ship_role = {
     hlt.entity.Ship.Role.DOCK: lambda s, ce: ship_role.dock_transition(s, ce, me),
     hlt.entity.Ship.Role.ATTACK: lambda s, ce: ship_role.attack_transition(s, ce, me),
     hlt.entity.Ship.Role.DEFEND: lambda s, ce: ship_role.defend_transition(s, ce, me),
-    hlt.entity.Ship.Role.SELF_DEFENSE: lambda s, ce: hlt.entity.Ship.Role.SELF_DEFENSE,
+    hlt.entity.Ship.Role.DISTRACT: lambda s, ce: hlt.entity.Ship.Role.DISTRACT,
 }
 
 perform_ship_action = {
@@ -37,7 +37,7 @@ perform_ship_action = {
     hlt.entity.Ship.Role.DOCK: lambda s, ce: control_ship.move(s, ce, game_map),
     hlt.entity.Ship.Role.ATTACK: lambda s, ce: control_ship.attack(s, game_map),
     hlt.entity.Ship.Role.DEFEND: lambda s, ce: control_ship.defend(s, ce, game_map),
-    hlt.entity.Ship.Role.SELF_DEFENSE: lambda s, ce: control_ship.self_defense(s, ce, game_map),
+    hlt.entity.Ship.Role.DISTRACT: lambda s, ce: control_ship.distract(s, ce, game_map),
 }
 
 #####################################################
@@ -76,6 +76,13 @@ while True:
     if start_of_game:
         # Spread the ships apart at the start
         control_ship.scatter_ships(team_ships, command_queue)
+
+        # Set the role of the first ship to DISTRACT
+        team_ships[0].role = team_ships[0].Role.ATTACK
+
+        for ship in team_ships:
+            # Update the role of the current ship
+            my_fleet_roles[ship.id] = ship.role
 
         # Send end of turn command queue
         game.send_command_queue(command_queue)

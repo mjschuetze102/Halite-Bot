@@ -187,8 +187,10 @@ def attack_transition(ship, closest_entity, me):
                 """
                 If closest planet is now unowned,
                 then defend the planet so we can settle later
+                # Updated to keep attacking. Will revert back later
                 """
-                ship.change_role_defend()
+                # No need to change state
+                return
 
             # If the planet is owned, but not by me
             elif not closest_entity.is_owner(me):

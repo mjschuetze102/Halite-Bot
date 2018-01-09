@@ -77,8 +77,18 @@ while True:
         # Spread the ships apart at the start
         control_ship.scatter_ships(team_ships, command_queue)
 
-        # Set the role of the first ship to DISTRACT
-        team_ships[0].role = team_ships[0].Role.ATTACK
+        # Collect information about all entities near the ship
+        entities_by_distance = game_map.nearby_entities_by_distance(team_ships[0])
+        entities_by_distance = OrderedDict(sorted(entities_by_distance.items(), key=lambda t: t[0]))
+
+        # Get all entities excluding my ships and other planets
+        entities_by_distance = [entities_by_distance[distance][0] for distance in entities_by_distance
+                                if isinstance(entities_by_distance[distance][0], hlt.entity.Ship) and
+                                entities_by_distance[distance][0] not in team_ships]
+
+        if team_ships[0].calculate_distance_between(entities_by_distance[0]) < 80:
+            # Set the role of the first ship to DISTRACT
+            team_ships[0].role = team_ships[0].Role.ATTACK
 
         for ship in team_ships:
             # Update the role of the current ship

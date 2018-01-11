@@ -236,11 +236,12 @@ class Ship(Entity):
     # Added in to check what the actions of the bot should be
     class Role(Enum):
         NONE = 0
-        SETTLE = 1
-        DOCK = 2
-        ATTACK = 3
-        DEFEND = 4
-        DISTRACT = 5
+        START = 1
+        SETTLE = 2
+        DOCK = 3
+        ATTACK = 4
+        DEFEND = 5
+        DISTRACT = 6
 
     def __init__(self, player_id, ship_id, x, y, hp, vel_x, vel_y,
                  docking_status, planet, progress, cooldown):
@@ -288,6 +289,12 @@ class Ship(Entity):
         :rtype: str
         """
         return "u {}".format(self.id)
+
+    def change_role_start(self):
+        """
+        Change the role of the ship to settle
+        """
+        self.role = Ship.Role.START
 
     def change_role_settle(self):
         """
